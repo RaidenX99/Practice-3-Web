@@ -7,12 +7,41 @@ from PIL import Image
 from datetime import datetime
 import requests
 import plotly.express as px
-import plotly.graph_objects as go
 import math
 
 from core import PracticeEngine
 
 st.set_page_config(page_title="Практическая работа №3", layout="centered", page_icon="📈")
+
+# Кастомные стили и визуальное оформление с плавной анимацией элементов
+st.markdown("""
+    <style>
+    .stTextInput > div > div > input {
+        border-radius: 8px;
+        border: 2px solid #4f46e5;
+    }
+    .stButton > button {
+        border-radius: 8px;
+        font-weight: bold;
+        background: linear-gradient(90deg, #4f46e5 0%, #3b82f6 100%);
+        color: white;
+        border: none;
+        transition: 0.3s ease;
+    }
+    .stButton > button:hover {
+        opacity: 0.9;
+        transform: scale(1.02);
+    }
+    .card {
+        padding: 20px;
+        border-radius: 12px;
+        background-color: #1f2937;
+        border: 1px solid #374151;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 def upload_to_google_drive(file_content, filename):
     try:
@@ -51,39 +80,42 @@ if 'started' not in st.session_state:
     st.session_state.sent_to_cloud = False
 
 if not st.session_state.started:
-    st.title("📈 Практическая работа №3 - ТВиМС")
-    st.write("Формула Пуассона и предельные теоремы в ИКТ")
+    st.markdown("<h1 style='text-align: center; color: #4f46e5;'>📈 Практическая работа №3</h1>", unsafe_allow_html=True)
+    st.markdown("<h4 style='text-align: center; color: #9ca3af;'>Предельные теоремы и закон Пуассона в ИКТ</h4>", unsafe_allow_html=True)
     
     with st.container():
-        st.info("Введите номер вашей зачетной книжки для генерации индивидуального варианта.")
-        student_id_input = st.text_input("Номер зачетной книжки:", placeholder="Например: 220156")
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        student_id_input = st.text_input("Введите номер вашей зачетной книжки:", placeholder="Например: 220156")
         
         if st.button("🚀 Начать практику", use_container_width=True):
             if student_id_input.strip():
                 st.session_state.student_id = student_id_input.strip()
                 st.session_state.started = True
                 st.session_state.start_time = datetime.now()
+                st.balloons()  # Анимация воздушных шаров при старте!
                 st.rerun()
             else:
                 st.error("Поле не может быть пустым!")
+        st.markdown("</div>", unsafe_allow_html=True)
 
 elif st.session_state.started and st.session_state.report_json is None:
     st.title(f"🎓 Практика №3 | Зачетка: {st.session_state.student_id}")
     
-    # Интерактивная панель для увлекательного исследования (Визуализатор Пуассона)
-    with st.expander("📊 Интерактивный мини-лабораторный стенд: Закон Пуассона", expanded=False):
-        st.write("Покрутите параметр интенсивности $\\lambda$, чтобы увидеть, как меняется распределение вероятностей редких сетевых событий:")
-        sim_lam = st.slider("Интенсивность сбоев ($\\lambda$):", 0.5, 10.0, 3.0, 0.5)
+    # Интерактивный анимированный визуализатор
+    with st.expander("📊 Интерактивный графический стенд закона Пуассона", expanded=True):
+        st.write("Настройте параметр интенсивности $\\lambda$ с помощью ползунка и посмотрите, как меняется вероятностная кривая редких событий в реальном времени:")
+        sim_lam = st.slider("Параметр интенсивности ($\\lambda$):", 0.5, 10.0, 3.0, 0.5)
         
         k_vals = list(range(0, 15))
         p_vals = [((sim_lam**k) / math.factorial(k)) * math.exp(-sim_lam) for k in k_vals]
         
         fig = px.bar(
             x=k_vals, y=p_vals,
-            labels={'x': 'Число событий (k)', 'y': 'Вероятность P(k)'},
-            title=f"Распределение Пуассона при λ = {sim_lam}"
+            labels={'x': 'Количество событий (k)', 'y': 'Вероятность P(k)'},
+            title=f"График распределения Пуассона (λ = {sim_lam})",
+            template="plotly_dark"
         )
-        fig.update_traces(marker_color='#1f77b4')
+        fig.update_traces(marker_color='#4f46e5')
         st.plotly_chart(fig, use_container_width=True)
 
     engine = PracticeEngine(st.session_state.student_id)
@@ -97,7 +129,7 @@ elif st.session_state.started and st.session_state.report_json is None:
         st.session_state.student_photos = {}
 
     for task_key, task_data in variant.items():
-        st.divider()
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
         if task_key == 'task_99':
             st.markdown(f"### 📝 {task_data['title']}")
             st.markdown(task_data['text'])
@@ -115,6 +147,7 @@ elif st.session_state.started and st.session_state.report_json is None:
             
             photos = st.file_uploader("📸 Прикрепить решение (фото)", type=["jpg", "jpeg", "png"], accept_multiple_files=True, key=f"photo_{task_key}")
             st.session_state.student_photos[task_key] = photos
+        st.markdown("</div>", unsafe_allow_html=True)
         
     st.divider()
     if st.button("✅ Завершить и отправить преподавателю", use_container_width=True, type="primary"):
@@ -162,6 +195,7 @@ elif st.session_state.started and st.session_state.report_json is None:
         st.rerun()
 
 if st.session_state.get('report_json') is not None:
+    st.balloons()  # Праздничная анимация при успешном завершении!
     st.title("🎉 Работа успешно завершена!")
     
     if not st.session_state.get('sent_to_cloud', False):
@@ -173,6 +207,7 @@ if st.session_state.get('report_json') is not None:
                 
     if st.session_state.get('sent_to_cloud', False):
         st.success("✅ Отчет успешно отправлен преподавателю в облако! Все данные и фотографии зафиксированы.")
+        st.snow()  # Анимация снега для усиления вау-эффекта
         st.info("Вы можете закрыть эту вкладку.")
         
     if st.button("Пройти заново / Сменить зачетку"):
