@@ -7,7 +7,7 @@ from core import PracticeEngine
 st.set_page_config(page_title="Панель проверки - Практика 3", layout="wide", page_icon="🛡️")
 
 st.title("🛡️ Панель преподавателя - Практическая работа №3")
-st.write("Проверка отчетов студентов, верификация хэшей античита и просмотр рукописных решений (формула Пуассона и предельные теоремы).")
+st.write("Проверка отчетов студентов, верификация хэшей античита и просмотр рукописных решений (формула Пуассона).")
 
 if 'admin_auth' not in st.session_state:
     st.session_state.admin_auth = False
@@ -44,7 +44,6 @@ else:
                 timestamp = data.get("timestamp", "Н/Д")
                 time_spent = data.get("time_spent", "Н/Д")
                 
-                # Дешифровка ответов и фотографий
                 decrypted_answers = {}
                 for k, v in encrypted_answers.items():
                     if isinstance(v, list):
