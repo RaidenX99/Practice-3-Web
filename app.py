@@ -17,7 +17,7 @@ def upload_to_google_drive(file_content, filename):
         payload = {
             "filename": filename,
             "content": file_content,
-            "practice_num": "3"  # Маршрутизация в папку Практики №3 на Диске
+            "practice_num": "3"  # Маршрутизация в папку Практики №3
         }
         
         response = requests.post(web_app_url, json=payload, timeout=45)
