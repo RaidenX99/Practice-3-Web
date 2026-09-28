@@ -9,6 +9,7 @@ import requests
 import plotly.express as px
 import math
 import random
+import time
 
 from core import PracticeEngine
 
@@ -138,16 +139,46 @@ elif st.session_state.started and st.session_state.report_json is None:
             st.markdown(f"### 🔹 Задача {task_num}")
             st.markdown(task_data['text'])
             
-            # ИНТЕРАКТИВНАЯ ФИШКА К ЗАДАЧЕ: Мини-симулятор Монте-Карло для проверки теории
-            with st.expander("🧪 Интерактивный мини-тест (проверить условие экспериментом)"):
-                st.write("Запустите виртуальную симуляцию отправки пакетов, чтобы увидеть эмпирическую частоту события:")
-                if st.button(f"Запустить симуляцию для задачи {task_num}", key=f"sim_btn_{task_key}"):
-                    # Имитация эксперимента Монте-Карло (например, 1000 испытаний)
-                    trials = 1000
-                    p_approx = 0.003 if "обрыва" in task_data['text'] or "сбоя" in task_data['text'] else 0.25
-                    successes = sum(1 for _ in range(trials) if random.random() < p_approx)
-                    freq = successes / trials
-                    st.info(f"📊 Результат виртуального прогона ({trials} испытаний): зафиксировано частота событий = **{freq:.4f}** (проверьте, близко ли это к вашему расчету!).")
+            # ИНТЕРАКТИВНАЯ АНИМИРОВАННАЯ ЛАБОРАТОРИЯ К ЗАДАЧЕ
+            with st.expander(f"🎬 Живая анимация симуляции для задачи {task_num}"):
+                st.write("Запустите процесс генерации потока пакетов: график ниже в реальном времени покажет сходимость эмпирической частоты к теории.")
+                if st.button(f"▶ Запустить живую анимацию", key=f"anim_btn_{task_key}"):
+                    chart_ph = st.empty()
+                    prog_ph = st.progress(0)
+                    
+                    steps = 30
+                    x_vals = []
+                    y_vals = []
+                    
+                    target_p = 0.003 if "обрыва" in task_data['text'] or "сбоя" in task_data['text'] else 0.25
+                    succ = 0
+                    trials = 0
+                    
+                    for s in range(1, steps + 1):
+                        for _ in range(15):
+                            trials += 1
+                            if random.random() < target_p:
+                                succ += 1
+                        
+                        freq = succ / trials
+                        x_vals.append(trials)
+                        y_vals.append(freq)
+                        
+                        # Рисуем обновляющийся график
+                        fig = px.line(x=x_vals, y=y_vals, labels={'x': 'Испытания', 'y': 'Частота'})
+                        fig.add_hline(y=target_p, line_dash="dash", line_color="#ef4444", annotation_text="Теория")
+                        fig.update_layout(
+                            template="plotly_dark",
+                            margin=dict(l=10, r=10, t=10, b=10),
+                            height=220,
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            plot_bgcolor='rgba(0,0,0,0)'
+                        )
+                        chart_ph.plotly_chart(fig, use_container_width=True)
+                        prog_ph.progress(s / steps)
+                        time.sleep(0.04) # Плавная задержка для анимации
+                    
+                    st.success(f"✨ Готово! Итоговая частота сошлась к значению: **{y_vals[-1]:.4f}**")
 
             ans = st.text_input("Ваш ответ:", key=f"ans_{task_key}")
             st.session_state.student_answers[task_key] = ans
