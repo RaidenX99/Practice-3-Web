@@ -6,6 +6,9 @@ import io
 from PIL import Image
 from datetime import datetime
 import requests
+import plotly.express as px
+import plotly.graph_objects as go
+import math
 
 from core import PracticeEngine
 
@@ -17,7 +20,7 @@ def upload_to_google_drive(file_content, filename):
         payload = {
             "filename": filename,
             "content": file_content,
-            "practice_num": "3"  # Маршрутизация в папку Практики №3
+            "practice_num": "3"
         }
         
         response = requests.post(web_app_url, json=payload, timeout=45)
@@ -67,6 +70,22 @@ if not st.session_state.started:
 elif st.session_state.started and st.session_state.report_json is None:
     st.title(f"🎓 Практика №3 | Зачетка: {st.session_state.student_id}")
     
+    # Интерактивная панель для увлекательного исследования (Визуализатор Пуассона)
+    with st.expander("📊 Интерактивный мини-лабораторный стенд: Закон Пуассона", expanded=False):
+        st.write("Покрутите параметр интенсивности $\\lambda$, чтобы увидеть, как меняется распределение вероятностей редких сетевых событий:")
+        sim_lam = st.slider("Интенсивность сбоев ($\\lambda$):", 0.5, 10.0, 3.0, 0.5)
+        
+        k_vals = list(range(0, 15))
+        p_vals = [((sim_lam**k) / math.factorial(k)) * math.exp(-sim_lam) for k in k_vals]
+        
+        fig = px.bar(
+            x=k_vals, y=p_vals,
+            labels={'x': 'Число событий (k)', 'y': 'Вероятность P(k)'},
+            title=f"Распределение Пуассона при λ = {sim_lam}"
+        )
+        fig.update_traces(marker_color='#1f77b4')
+        st.plotly_chart(fig, use_container_width=True)
+
     engine = PracticeEngine(st.session_state.student_id)
     variant = engine.generate_variant()
     
