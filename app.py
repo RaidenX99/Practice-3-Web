@@ -139,50 +139,58 @@ elif st.session_state.started and st.session_state.report_json is None:
             st.markdown(f"### 🔹 Задача {task_num}")
             st.markdown(task_data['text'])
             
-            # ИНТЕРАКТИВНАЯ АНИМИРОВАННАЯ ЛАБОРАТОРИЯ К ЗАДАЧЕ
-            with st.expander(f"🎬 Живая анимация симуляции для задачи {task_num}"):
-                st.write("Запустите процесс генерации потока пакетов: график ниже в реальном времени покажет сходимость эмпирической частоты к теории.")
-                if st.button(f"▶ Запустить живую анимацию", key=f"anim_btn_{task_key}"):
-                    chart_ph = st.empty()
-                    prog_ph = st.progress(0)
-                    
-                    steps = 30
-                    x_vals = []
-                    y_vals = []
-                    
-                    target_p = 0.003 if "обрыва" in task_data['text'] or "сбоя" in task_data['text'] else 0.25
-                    succ = 0
-                    trials = 0
-                    
-                    for s in range(1, steps + 1):
-                        for _ in range(15):
-                            trials += 1
-                            if random.random() < target_p:
-                                succ += 1
-                        
-                        freq = succ / trials
-                        x_vals.append(trials)
-                        y_vals.append(freq)
-                        
-                        # Рисуем обновляющийся график
-                        fig = px.line(x=x_vals, y=y_vals, labels={'x': 'Испытания', 'y': 'Частота'})
-                        fig.add_hline(y=target_p, line_dash="dash", line_color="#ef4444", annotation_text="Теория")
-                        fig.update_layout(
-                            template="plotly_dark",
-                            margin=dict(l=10, r=10, t=10, b=10),
-                            height=220,
-                            paper_bgcolor='rgba(0,0,0,0)',
-                            plot_bgcolor='rgba(0,0,0,0)'
-                        )
-                        chart_ph.plotly_chart(fig, use_container_width=True)
-                        prog_ph.progress(s / steps)
-                        time.sleep(0.04) # Плавная задержка для анимации
-                    
-                    st.success(f"✨ Готово! Итоговая частота сошлась к значению: **{y_vals[-1]:.4f}**")
-
+            # Поле ввода ответа сразу под текстом задачи
             ans = st.text_input("Ваш ответ:", key=f"ans_{task_key}")
             st.session_state.student_answers[task_key] = ans
             
+            # ИНТЕРАКТИВНАЯ АНИМИРОВАННАЯ ПРОВЕРКА ВВЕДЕННОГО ОТВЕТА
+            with st.expander(f"🎬 Проверить мой ответ с помощью живой симуляции"):
+                st.write("Введите ответ выше, затем нажмите кнопку запуска — симуляция проверит вашу вероятность на практике:")
+                if st.button(f"▶ Запустить тест для задачи {task_num}", key=f"anim_btn_{task_key}"):
+                    user_val_str = st.session_state.get(f"ans_{task_key}", "").strip().replace(',', '.')
+                    try:
+                        target_p = float(user_val_str)
+                        if not (0 <= target_p <= 1):
+                            st.error("Значение вероятности должно быть в пределах от 0 до 1!")
+                        else:
+                            chart_ph = st.empty()
+                            prog_ph = st.progress(0)
+                            
+                            steps = 25
+                            x_vals, y_vals = [], []
+                            succ, trials = 0, 0
+                            
+                            for s in range(1, steps + 1):
+                                for _ in range(20):
+                                    trials += 1
+                                    if random.random() < target_p:
+                                        succ += 1
+                                
+                                freq = succ / trials
+                                x_vals.append(trials)
+                                y_vals.append(freq)
+                                
+                                fig = px.line(x=x_vals, y=y_vals, labels={'x': 'Испытания', 'y': 'Частота'})
+                                fig.add_hline(y=target_p, line_dash="dash", line_color="#4ade80", annotation_text="Ваш ответ")
+                                fig.update_layout(
+                                    template="plotly_dark",
+                                    margin=dict(l=10, r=10, t=10, b=10),
+                                    height=200,
+                                    paper_bgcolor='rgba(0,0,0,0)',
+                                    plot_bgcolor='rgba(0,0,0,0)'
+                                )
+                                chart_ph.plotly_chart(fig, use_container_width=True)
+                                prog_ph.progress(s / steps)
+                                time.sleep(0.03)
+                            
+                            diff = abs(y_vals[-1] - target_p)
+                            if diff < 0.05:
+                                st.success(f"🎯 Отлично! Эмпирическая частота ({y_vals[-1]:.4f}) отлично сошлась с вашим ответом ({target_p}).")
+                            else:
+                                st.info(f"📊 Эксперимент завершен. Частота: {y_vals[-1]:.4f}. Сравните с вашим расчетом.")
+                    except ValueError:
+                        st.warning("⚠️ Сначала введите числовой ответ в поле «Ваш ответ», чтобы симуляция знала, что проверять!")
+
             photos = st.file_uploader("📸 Прикрепить решение (фото)", type=["jpg", "jpeg", "png"], accept_multiple_files=True, key=f"photo_{task_key}")
             st.session_state.student_photos[task_key] = photos
         st.markdown('</div>', unsafe_allow_html=True)
